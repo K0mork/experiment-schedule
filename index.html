@@ -64,7 +64,8 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
 .evt-badge{width:21px;height:21px;flex:0 0 21px;border-radius:5px;display:grid;place-items:center;font-size:11px;background:#ffffffae;color:inherit;font-weight:900}
 .evt-label{min-width:0;overflow:hidden;text-overflow:ellipsis}.evt-small{margin-left:auto;font-size:10px;opacity:.68;font-weight:680;font-variant-numeric:tabular-nums}.event.large{flex-wrap:wrap;align-content:center;column-gap:7px;row-gap:3px}.event.large .evt-small{width:100%;margin-left:0;padding-left:27px}.event.large.no-badge .evt-small{padding-left:0}
 .event.drop-preview{opacity:.45;pointer-events:none;border-style:dashed;z-index:4}
-.now-line{height:1px;background:#5376b8;position:absolute;left:0;right:0;z-index:1;opacity:.55;pointer-events:none}
+.now-line{position:absolute;left:0;right:0;height:2px;background:#e84855;box-shadow:0 1px 0 #ffffffb0;z-index:8;pointer-events:none}
+.now-clock{position:absolute;right:4px;transform:translateY(-50%);z-index:12;background:#e84855;color:#fff;border-radius:5px;padding:4px 5px;font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;box-shadow:0 2px 6px #aa3d4b33;pointer-events:none}
 .diagnostics{border:1px solid #efcfaa;border-bottom:0;background:#fff9ef;color:#8d6226;padding:13px 17px;font-size:12px;font-weight:650;line-height:1.65}.diagnostics.ok{background:#f1f8f5;color:#358265;border-color:#d2e9dd}.diagnostics .issue-line{display:block}.diagnostics .issue-line + .issue-line{margin-top:3px}
 .footer{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:11px;font-weight:650;color:#8795a6;padding:16px 4px}.footer button{background:transparent;border:0;padding:0 4px;font-size:11px;color:#6b7e9b;text-decoration:underline;text-underline-offset:3px}.footer button:first-of-type{margin-left:auto}
 .sheet{border:1px solid #dce4ee;border-radius:18px;box-shadow:0 24px 100px #152e5140;width:min(440px,calc(100vw - 28px));max-height:90vh;padding:23px;overflow:auto}.sheet::backdrop{background:#1c293c75;backdrop-filter:blur(3px)}
@@ -715,6 +716,11 @@ window.SCHEDULE_CONFIG = {
   const HOUR0 = 10;
   const ROW = 38;
   const MAX_SLOTS = 32;
+  const LIVE_DATE = '2026-12-12';
+  const TOKYO_FORMATTER = new Intl.DateTimeFormat('en-US',{
+    timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'
+  });
   const LOCAL_KEY = 'experiment-board:local:v2';
   const DRAFT_KEY = 'experiment-board:unsaved:v3';
   const INITIAL = window.INITIAL_SCHEDULE?.tasks || [];
@@ -891,6 +897,32 @@ window.SCHEDULE_CONFIG = {
       return `<div class="lane"><div class="lane-head ${headClass}"><strong>${esc(l.name)}</strong>${l.sub?`<small>${esc(l.sub)}</small>`:''}</div><div class="lane-body" data-lane="${esc(l.id)}" style="height:${height}px">${subset.map(t=>cardHtml(t,state.view)).join('')}</div></div>`;
     });
     const board=$('board');board.className='board '+(state.view==='places'?'places':'people');board.innerHTML=axis+laneNodes.join('');
+    updateNowBar();
+  }
+  function updateNowBar(){
+    const board=$('board');
+    if(!board)return;
+    const parts=Object.fromEntries(TOKYO_FORMATTER.formatToParts(new Date())
+      .filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+    const isToday=`${parts.year}-${parts.month}-${parts.day}`===LIVE_DATE;
+    const minuteOfDay=Number(parts.hour)*60+Number(parts.minute)+Number(parts.second)/60;
+    const y=(minuteOfDay-HOUR0*60)*ROW/15;
+    const axis=board.querySelector('.axis-body');
+    const visible=isToday && axis && y>=0 && y<axis.clientHeight;
+    if(!visible){
+      board.querySelectorAll('.now-line,.now-clock').forEach(el=>el.remove());
+      return;
+    }
+    let clock=axis.querySelector('.now-clock');
+    if(!clock){clock=document.createElement('div');clock.className='now-clock';axis.appendChild(clock);}
+    clock.style.top=y+'px';
+    clock.textContent=parts.hour+':'+parts.minute;
+    for(const lane of board.querySelectorAll('.lane-body')){
+      let line=lane.querySelector('.now-line');
+      if(!line){line=document.createElement('div');line.className='now-line';lane.appendChild(line);}
+      line.style.top=y+'px';
+      line.title='現在時刻 '+clock.textContent;
+    }
   }
   function render(){renderTop();renderBoard();}
   function change(mutator){
@@ -1089,6 +1121,8 @@ window.SCHEDULE_CONFIG = {
     });
   }
   bind();render();setupCloud();
+  setInterval(updateNowBar,15000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateNowBar();});
 })();
 
 </script>
