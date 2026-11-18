@@ -513,17 +513,6 @@ window.INITIAL_SCHEDULE = {
       "note": ""
     },
     {
-      "id": "hall_4",
-      "person": "A",
-      "place": "hall",
-      "start": 12,
-      "duration": 2,
-      "kind": "hall",
-      "stage": "hall",
-      "title": "廊下（宮下）",
-      "note": ""
-    },
-    {
       "id": "n_setup",
       "person": null,
       "place": "dark",
@@ -565,17 +554,6 @@ window.INITIAL_SCHEDULE = {
       "kind": "session",
       "stage": "s_704",
       "title": "704（杉山）",
-      "note": ""
-    },
-    {
-      "id": "hall_5",
-      "person": "B",
-      "place": "hall",
-      "start": 15,
-      "duration": 2,
-      "kind": "hall",
-      "stage": "hall",
-      "title": "廊下（宮下）",
       "note": ""
     },
     {
@@ -826,7 +804,7 @@ window.SCHEDULE_CONFIG = {
     }
     const hall=events.filter(t=>t.kind==='hall').sort((a,b)=>a.start-b.start);
     const hallPeople=[...new Set(hall.map(t=>t.person))];
-    if(hall.length!==6||hallPeople.length!==2||hallPeople.some(p=>hall.filter(t=>t.person===p).length!==3))add('廊下（宮下）：2人×3回が必要です');
+    if(hall.length!==4||hallPeople.length!==2||hallPeople.some(p=>hall.filter(t=>t.person===p).length!==2))add('廊下（宮下）：2人×2回が必要です');
     for(let i=1;i<hall.length;i++)if(hall[i].person===hall[i-1].person)add('廊下（宮下）：同じ人物が連続しています');
     return issues;
   }

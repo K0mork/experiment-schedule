@@ -365,17 +365,6 @@
       "note": ""
     },
     {
-      "id": "hall_4",
-      "person": "A",
-      "place": "hall",
-      "start": 12,
-      "duration": 2,
-      "kind": "hall",
-      "stage": "hall",
-      "title": "廊下（宮下）",
-      "note": ""
-    },
-    {
       "id": "n_setup",
       "person": null,
       "place": "dark",
@@ -417,17 +406,6 @@
       "kind": "session",
       "stage": "s_704",
       "title": "704（杉山）",
-      "note": ""
-    },
-    {
-      "id": "hall_5",
-      "person": "B",
-      "place": "hall",
-      "start": 15,
-      "duration": 2,
-      "kind": "hall",
-      "stage": "hall",
-      "title": "廊下（宮下）",
       "note": ""
     },
     {
@@ -552,5 +530,5 @@
       "note": ""
     }
   ],
-  "updatedAt": "2026-11-18T02:01:46.240Z"
+  "updatedAt": "2026-11-18T23:45:57.143Z"
 }
