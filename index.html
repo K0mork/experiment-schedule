@@ -90,8 +90,8 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
       </div>
       <div class="top-actions">
         <span class="status" id="syncStatus"><span class="status-dot"></span>ローカル</span>
-        <div class="finish"><small>終了</small><strong id="finishTime">15:30</strong></div>
         <button id="loginButton" class="btn secondary" type="button">編集</button>
+        <button id="saveButton" class="btn primary" type="button">保存</button>
       </div>
     </header>
 
@@ -109,21 +109,13 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
           <button type="button" class="filter person-d" data-filter="D">D</button>
         </div>
       </div>
-      <div class="toolbar-right">
-        <button id="undoButton" type="button" class="icon-btn" aria-label="元に戻す" title="元に戻す">↶</button>
-        <button id="redoButton" type="button" class="icon-btn" aria-label="やり直し" title="やり直し">↷</button>
-        <button id="newButton" type="button" class="btn secondary" aria-label="予定を追加" title="予定を追加">＋</button>
-        <button id="saveButton" type="button" class="btn primary">保存</button>
-        <button id="shareButton" type="button" class="btn secondary">共有</button>
-        <select id="endSelect" aria-label="表示終了時刻" title="表示終了時刻"><option value="24">16:00</option><option value="28">17:00</option><option value="32">18:00</option></select>
-      </div>
     </section>
 
     <section class="diagnostics" id="diagnostics" hidden aria-live="polite"></section>
     <section class="board-shell" aria-label="スケジュール">
       <div class="scroll" id="boardScroll"><div id="board"></div></div>
     </section>
-    <footer class="footer"><button type="button" id="exportButton" title="JSONを書き出す">JSON</button><button type="button" id="importButton" title="JSONを読み込む">読込</button><input type="file" id="importInput" accept="application/json,.json" hidden></footer>
+
   </div>
 
   <dialog id="eventDialog" class="sheet">
@@ -742,6 +734,13 @@ window.SCHEDULE_CONFIG = {
     {id:'hall', name:'廊下（宮下）'},
     {id:'abd', name:'アブドゥル'}
   ];
+  const DISPLAY_PLACES = [
+    {id:'dark-sugiyama', name:'暗室（杉山）'},
+    {id:'dark-nishioka', name:'暗室（西岡）'},
+    ...PLACES.filter(p=>p.id!=='dark')
+  ];
+  const displayPlaceId = t => t.place!=='dark' ? t.place
+    : (t.stage==='s_dark'||t.stage==='s_dark_setup'||String(t.title||'').includes('杉山') ? 'dark-sugiyama' : 'dark-nishioka');
   const DEFAULT_TITLE = '追加予定';
   const $ = id => document.getElementById(id);
   const clone = x => JSON.parse(JSON.stringify(x));
@@ -754,7 +753,7 @@ window.SCHEDULE_CONFIG = {
   let localCache = null;
   try { const stored = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null'); if (Array.isArray(stored)) localCache=normalize(stored); } catch (_e) { /* ignore corrupt local draft */ }
   const state = {
-    view:'people', filter:'ALL', endSlots:24, items: unsavedDraft ? clone(unsavedDraft) : (CLOUD ? clone(initialItems) : (localCache || clone(initialItems))),
+    view:'people', filter:'ALL', items: unsavedDraft ? clone(unsavedDraft) : (CLOUD ? clone(initialItems) : (localCache || clone(initialItems))),
     history:[], future:[], client:null, editor:false, user:null, token:null, revision:0,
     cloudReady:false, dirty:Boolean(unsavedDraft), saving:false, remoteConflict:false, authError:'', drag:null,
     selectedId:null, newItem:false, saveTimer:null, counter:0
@@ -833,7 +832,6 @@ window.SCHEDULE_CONFIG = {
     const x=$('syncStatus'); x.className='status '+type; x.innerHTML=`<span class="status-dot"></span>${esc(label)}`;
   }
   function renderTop(){
-    $('finishTime').textContent=time(finishSlot());
     const issues=issueList();
     const diag=$('diagnostics'); diag.hidden=issues.length===0&&!state.remoteConflict&&!state.authError;
     diag.className='diagnostics';
@@ -854,12 +852,8 @@ window.SCHEDULE_CONFIG = {
     $('loginButton').hidden=!CLOUD;
     $('loginButton').textContent=state.editor?'編集終了':'編集';
     const enabled=state.editor;
-    $('undoButton').disabled=!enabled||!state.history.length;
-    $('redoButton').disabled=!enabled||!state.future.length;
-    $('newButton').disabled=!enabled;
     $('saveButton').disabled=!enabled||issues.length>0||state.remoteConflict||state.saving||(!state.dirty&&CLOUD);
     $('saveButton').textContent=state.saving?'保存中…':(issues.length?'要修正':'保存');
-    $('importButton').disabled=!enabled;
     document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('active',b.dataset.filter===state.filter));
     $('tabPeople').setAttribute('aria-selected',String(state.view==='people'));
     $('tabPlaces').setAttribute('aria-selected',String(state.view==='places'));
@@ -878,7 +872,6 @@ window.SCHEDULE_CONFIG = {
     const headline=laneMode==='people'?cardText(t):
       t.kind==='setup'?'セットアップ':
       t.kind==='custom'?cardText(t):
-      t.place==='dark'?t.title.replace('暗室（','').replace('）','')+' · '+person:
       person;
     const draggable=state.editor?'true':'false';
     const top=t.start*ROW+2;
@@ -886,13 +879,13 @@ window.SCHEDULE_CONFIG = {
     return `<button class="event ${esc(kind)}${large}${dimmed} no-badge${state.editor?'':' muted'}" type="button" draggable="${draggable}" data-id="${esc(t.id)}" style="top:${top}px;height:${height}px" title="${esc(t.title)} ${esc(taskInterval(t))}"><span class="evt-label">${esc(headline)}</span></button>`;
   }
   function renderBoard(){
-    const end=Math.max(state.endSlots,Math.min(MAX_SLOTS,Math.ceil(finishSlot()/4)*4));
+    const end=Math.max(24,Math.min(MAX_SLOTS,Math.ceil(finishSlot()/4)*4));
     const height=end*ROW;
-    const lanes=state.view==='people'?PERSONS.map(p=>({id:p,name:p,sub:''})):PLACES;
+    const lanes=state.view==='people'?PERSONS.map(p=>({id:p,name:p,sub:''})):DISPLAY_PLACES;
     const ticks=[];for(let s=0;s<=end;s+=2){const cls=s%4===0?'hour':'';ticks.push(`<div class="tick ${cls} ${s===end?'last':''}" style="top:${s*ROW}px">${time(s)}</div>`);}
     const axis=`<div class="axis"><div class="axis-head">TIME</div><div class="axis-body" style="height:${height}px">${ticks.join('')}</div></div>`;
     const laneNodes=lanes.map(l=>{
-      const subset=state.items.filter(t=>state.view==='people'?t.person===l.id:t.place===l.id);
+      const subset=state.items.filter(t=>state.view==='people'?t.person===l.id:displayPlaceId(t)===l.id);
       subset.sort((a,b)=>a.start-b.start||a.duration-b.duration);
       const headClass=state.view==='people'?`person-${l.id.toLowerCase()}`:'';
       return `<div class="lane"><div class="lane-head ${headClass}"><strong>${esc(l.name)}</strong>${l.sub?`<small>${esc(l.sub)}</small>`:''}</div><div class="lane-body" data-lane="${esc(l.id)}" style="height:${height}px">${subset.map(t=>cardHtml(t,state.view)).join('')}</div></div>`;
@@ -1011,35 +1004,13 @@ window.SCHEDULE_CONFIG = {
     const id=state.drag?.id||e.dataTransfer.getData('text/plain');
     const t=state.items.find(o=>o.id===id);if(!t)return;
     const laneId=lane.dataset.lane;
-    if(state.view==='places'&&laneId!==t.place){toast('場所の変更は予定編集から行ってください');return;}
+    if(state.view==='places'&&laneId!==displayPlaceId(t)){toast('場所は変更できません');return;}
     if(state.view==='people'&&!t.person)return;
     const r=lane.getBoundingClientRect();
     const offset=state.drag?.offset||0;
     const start=Math.max(0,Math.min(MAX_SLOTS-t.duration,Math.round((e.clientY-r.top-offset)/ROW)));
     change(arr=>{const x=arr.find(o=>o.id===id);if(x){x.start=start;if(state.view==='people')x.person=laneId;}});
     state.drag=null;
-  }
-  function exportJSON(){
-    const content=JSON.stringify({version:1,events:state.items,revision:state.revision},null,2);
-    const blob=new Blob([content],{type:'application/json'});const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download='schedule.json';a.click();URL.revokeObjectURL(url);
-  }
-  async function importJSON(file){
-    if(!state.editor||!file)return;
-    try{
-      const raw=JSON.parse(await file.text());
-      const items=normalize(Array.isArray(raw)?raw:raw.events);
-      if(!Array.isArray(items)||!items.length)throw Error('missing events');
-      if(items.some(t=>!t.id||!t.kind||!Number.isInteger(t.start)||!Number.isInteger(t.duration)))throw Error('invalid task');
-      change(arr=>{arr.splice(0,arr.length,...items);});
-      toast('読み込みました');
-    }catch(e){console.error(e);toast('JSONを読み込めませんでした');}
-    $('importInput').value='';
-  }
-  async function share(){
-    const href=location.href.split('#')[0];
-    try{await navigator.clipboard.writeText(href);toast('URLをコピーしました');}
-    catch(e){window.prompt('共有URL',href);}
   }
   async function reloadRemote(){
     if(state.dirty)return false;
@@ -1099,15 +1070,8 @@ window.SCHEDULE_CONFIG = {
     $('tabPeople').addEventListener('click',()=>{state.view='people';render();});
     $('tabPlaces').addEventListener('click',()=>{state.view='places';render();});
     document.querySelector('.filters').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(b){state.filter=b.dataset.filter;render();}});
-    $('endSelect').addEventListener('change',e=>{state.endSlots=Number(e.target.value);renderBoard();});
-    $('undoButton').addEventListener('click',undo);$('redoButton').addEventListener('click',redo);
-    $('newButton').addEventListener('click',makeNew);
     $('saveButton').addEventListener('click',()=>CLOUD?saveCloud():(persistLocal(),toast('ブラウザに保存しました')));
-    $('shareButton').addEventListener('click',share);
     $('loginButton').addEventListener('click',onLoginClick);
-    $('exportButton').addEventListener('click',exportJSON);
-    $('importButton').addEventListener('click',()=>{if(state.editor)$('importInput').click();});
-    $('importInput').addEventListener('change',e=>importJSON(e.target.files?.[0]));
     $('board').addEventListener('click',e=>{const b=e.target.closest('.event');if(b)openEvent(b.dataset.id);});
     $('board').addEventListener('dragstart',beginDrag);
     $('board').addEventListener('dragend',()=>{state.drag=null;document.querySelectorAll('.lane-body').forEach(x=>x.classList.remove('drag-over'));});
