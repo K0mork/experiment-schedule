@@ -21,7 +21,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic
 button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.35;cursor:default}
 .page{max-width:1720px;padding:28px clamp(12px,2.65vw,42px) 30px;margin:0 auto}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:23px}
-.title-group h1{margin:4px 0 0;font-size:clamp(24px,3vw,32px);font-weight:800;letter-spacing:-.045em;line-height:1.3}
+.title-group h1{margin:0;font-size:clamp(24px,3vw,32px);font-weight:800;letter-spacing:-.045em;line-height:1.3}
 .eyebrow{font-size:10px;font-weight:800;color:#8a99b1;letter-spacing:.20em}
 .top-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .status{display:flex;gap:8px;align-items:center;border:1px solid var(--hair);background:#fff;color:#758399;font-size:12px;font-weight:720;padding:11px 12px;border-radius:11px;white-space:nowrap}
@@ -33,7 +33,7 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
 .btn:not(:disabled):active{transform:translateY(1px)}.btn.primary{background:#2c4b7d;color:#fff}.btn.primary:hover:not(:disabled){background:#203b65}.btn.secondary{background:#fff;border-color:#dce4ed;color:#57667b}.btn.secondary:hover:not(:disabled){background:#f3f6fa}.btn.danger{background:#fff;border-color:#edd7dc;color:#b44f68}
 .toolbar{background:#fff;border:1px solid var(--hair);border-radius:15px 15px 0 0;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
 .toolbar-left,.toolbar-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.toolbar-right{gap:7px}.segmented{display:inline-flex;align-items:center;background:#eef2f8;border-radius:10px;padding:4px;gap:3px}
+.toolbar-right{gap:7px}.toolbar-right #endSelect{border:1px solid #dce4ed;background:#fff;border-radius:9px;color:#536b8b;font-size:12px;font-weight:700;padding:9px 8px;max-width:94px}.segmented{display:inline-flex;align-items:center;background:#eef2f8;border-radius:10px;padding:4px;gap:3px}
 .segmented button{background:transparent;border:0;border-radius:7px;padding:9px 17px;font-size:12px;font-weight:800;color:#78869a;min-width:86px}
 .segmented button[aria-selected=true]{background:#fff;color:#253a59;box-shadow:0 2px 5px #1f37521c}
 .filters{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.filter{font-size:12px;font-weight:800;border:1px solid transparent;background:#f5f7fb;border-radius:8px;padding:9px 11px;color:#7d899b;min-width:35px}.filter.active{background:#e8eef7;color:#334b6b;border-color:#cbd6e7}
@@ -86,13 +86,12 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
   <div class="page">
     <header class="topbar">
       <div class="title-group">
-        <div class="eyebrow">SCHEDULE BOARD</div>
         <h1>実験スケジュール</h1>
       </div>
       <div class="top-actions">
         <span class="status" id="syncStatus"><span class="status-dot"></span>ローカル</span>
         <div class="finish"><small>終了</small><strong id="finishTime">15:30</strong></div>
-        <button id="loginButton" class="btn secondary" type="button">編集者ログイン</button>
+        <button id="loginButton" class="btn secondary" type="button">編集</button>
       </div>
     </header>
 
@@ -113,26 +112,23 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
       <div class="toolbar-right">
         <button id="undoButton" type="button" class="icon-btn" aria-label="元に戻す" title="元に戻す">↶</button>
         <button id="redoButton" type="button" class="icon-btn" aria-label="やり直し" title="やり直し">↷</button>
-        <button id="newButton" type="button" class="btn secondary" title="予定の追加">＋ 予定</button>
+        <button id="newButton" type="button" class="btn secondary" aria-label="予定を追加" title="予定を追加">＋</button>
         <button id="saveButton" type="button" class="btn primary">保存</button>
         <button id="shareButton" type="button" class="btn secondary">共有</button>
+        <select id="endSelect" aria-label="表示終了時刻" title="表示終了時刻"><option value="24">16:00</option><option value="28">17:00</option><option value="32">18:00</option></select>
       </div>
     </section>
 
     <section class="diagnostics" id="diagnostics" hidden aria-live="polite"></section>
-    <section class="info-bar">
-      <div><span class="info-icon">⠿</span><span id="hintText">ドラッグで時間を変更 ／ クリックで編集</span></div>
-      <div class="info-right"><span id="taskCount"></span><label class="range-label">表示 <select id="endSelect"><option value="24">16:00</option><option value="28">17:00</option><option value="32">18:00</option></select></label></div>
-    </section>
     <section class="board-shell" aria-label="スケジュール">
       <div class="scroll" id="boardScroll"><div id="board"></div></div>
     </section>
-    <footer class="footer"><span>15分単位</span><span id="footerStatus"></span><button type="button" id="exportButton">JSON</button><button type="button" id="importButton">読込</button><input type="file" id="importInput" accept="application/json,.json" hidden></footer>
+    <footer class="footer"><button type="button" id="exportButton" title="JSONを書き出す">JSON</button><button type="button" id="importButton" title="JSONを読み込む">読込</button><input type="file" id="importInput" accept="application/json,.json" hidden></footer>
   </div>
 
   <dialog id="eventDialog" class="sheet">
     <form id="eventForm" method="dialog">
-      <div class="sheet-top"><div><div class="eyebrow">EVENT</div><h2 id="dialogTitle">予定を編集</h2></div><button type="button" id="closeEvent" class="close" aria-label="閉じる">×</button></div>
+      <div class="sheet-top"><div><h2 id="dialogTitle">予定</h2></div><button type="button" id="closeEvent" class="close" aria-label="閉じる">×</button></div>
       <label class="field" id="titleField"><span>予定</span><input id="eventTitle" type="text" maxlength="64" required></label>
       <div class="fields-2">
         <label class="field"><span>人物</span><select id="eventPerson"></select></label>
@@ -140,7 +136,7 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
       </div>
       <div class="fields-2">
         <label class="field"><span>開始</span><select id="eventStart"></select></label>
-        <label class="field"><span>所要時間</span><select id="eventDuration"><option value="1">15分</option><option value="2">30分</option><option value="4">60分</option></select></label>
+        <label class="field"><span>時間</span><select id="eventDuration"><option value="1">15分</option><option value="2">30分</option><option value="4">60分</option></select></label>
       </div>
       <label class="field"><span>メモ</span><textarea id="eventNote" rows="2" maxlength="250" placeholder=""></textarea></label>
       <div class="sheet-bottom"><button type="button" class="btn danger" id="deleteEvent">削除</button><div class="sheet-bottom-right"><button type="button" class="btn secondary" id="cancelEvent">キャンセル</button><button type="submit" class="btn primary">反映</button></div></div>
@@ -149,10 +145,10 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
 
   <dialog id="authDialog" class="sheet auth-sheet">
     <form id="authForm" method="dialog">
-      <div class="sheet-top"><div><div class="eyebrow">EDITOR</div><h2>編集者ログイン</h2></div><button type="button" id="closeAuth" class="close" aria-label="閉じる">×</button></div>
-      <label class="field"><span>GitHubトークン</span><input id="authEmail" type="password" autocomplete="off" required placeholder="github_pat_..."></label>
-      <p class="auth-note" id="authMessage">GitHubのFine-grained personal access tokenを入力します．</p>
-      <div class="sheet-bottom"><div></div><button type="submit" class="btn primary" id="sendMagicLink">編集を開始</button></div>
+      <div class="sheet-top"><div><h2>編集</h2></div><button type="button" id="closeAuth" class="close" aria-label="閉じる">×</button></div>
+      <label class="field"><span>GitHub Token</span><input id="authEmail" type="password" autocomplete="off" required placeholder="github_pat_..."></label>
+      <p class="auth-note" id="authMessage">K0mork/experiment-schedule · Contents: Read and write</p>
+      <div class="sheet-bottom"><div></div><button type="submit" class="btn primary" id="sendMagicLink">編集開始</button></div>
     </form>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -738,7 +734,7 @@ window.SCHEDULE_CONFIG = {
   const DATA_URL = './data.json';
   const PERSONS = ['A', 'B', 'C', 'D'];
   const PLACES = [
-    {id:'dark', name:'暗室', sub:'杉山 ／ 西岡'},
+    {id:'dark', name:'暗室'},
     {id:'n704', name:'704（西岡）'},
     {id:'k704', name:'704（駒田）'},
     {id:'s704', name:'704（杉山）'},
@@ -846,26 +842,23 @@ window.SCHEDULE_CONFIG = {
       if(issues.length>6)arr.push(`<span class="issue-line">ほか ${issues.length-6}件</span>`);
       if(state.remoteConflict)arr.unshift('<span class="issue-line">他の編集が反映されました．再読込が必要です． <button type="button" id="reloadRemote">読み直す</button></span>');
       if(state.authError)arr.unshift('<span class="issue-line">'+esc(state.authError)+' <button type="button" id="reauthNow">認証変更</button></span>');
-      diag.innerHTML=`<strong>${issues.length}件の確認事項</strong>${arr.join('')}`;
+      diag.innerHTML=(issues.length?`<strong>${issues.length}件</strong>`:'')+arr.join('');
       diag.querySelector('#reloadRemote')?.addEventListener('click',reloadRemote);
-      diag.querySelector('#reauthNow')?.addEventListener('click',()=>{ $('authMessage').textContent='対象リポジトリを選択し，Contents: Read and write を付与したGitHubトークンを入力してください．'; $('authDialog').showModal(); });
+      diag.querySelector('#reauthNow')?.addEventListener('click',()=>{ $('authMessage').textContent='K0mork/experiment-schedule · Contents: Read and write'; $('authDialog').showModal(); });
     }
     if(!CLOUD)setStatus('','ローカル');
     else if(state.remoteConflict)setStatus('error','競合');
     else if(!state.cloudReady)setStatus('pending','接続中');
     else if(state.dirty)setStatus('pending','未保存');
-    else setStatus('connected',state.editor?'編集モード':'閲覧モード');
+    else setStatus('connected',state.editor?'保存済':'閲覧');
     $('loginButton').hidden=!CLOUD;
-    $('loginButton').textContent=state.editor?'編集終了':'編集する';
+    $('loginButton').textContent=state.editor?'編集終了':'編集';
     const enabled=state.editor;
     $('undoButton').disabled=!enabled||!state.history.length;
     $('redoButton').disabled=!enabled||!state.future.length;
     $('newButton').disabled=!enabled;
     $('saveButton').disabled=!enabled||issues.length>0||state.remoteConflict||state.saving||(!state.dirty&&CLOUD);
     $('saveButton').textContent=state.saving?'保存中…':(issues.length?'要修正':'保存');
-    $('hintText').textContent=enabled?'ドラッグで時間を変更 ／ クリックで編集':'閲覧のみ';
-    $('taskCount').textContent=`${state.items.length}件`;
-    $('footerStatus').textContent=CLOUD?(state.editor?'編集可 · v2.1':'閲覧のみ · v2.1'):'この端末だけに保存';
     $('importButton').disabled=!enabled;
     document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('active',b.dataset.filter===state.filter));
     $('tabPeople').setAttribute('aria-selected',String(state.view==='people'));
@@ -882,14 +875,15 @@ window.SCHEDULE_CONFIG = {
     const kind=t.kind==='setup'?'setup':t.kind==='break'?'break':t.kind==='custom'?'custom':person.toLowerCase();
     const large=t.duration>=2?' large':'';
     const dimmed=state.filter!=='ALL'&&t.person&&t.person!==state.filter?' dimmed':'';
-    const badge=laneMode==='places'&&person?`<span class="evt-badge">${esc(person)}</span>`:'';
-    const headline=laneMode==='people'?cardText(t): (t.kind==='setup'?'セットアップ':t.kind==='custom'?cardText(t):t.kind==='abd'||t.kind==='hall'?person:t.place==='dark'?`${t.title.replace('暗室（','').replace('）','')} · ${person}`:person);
-    const detail=t.duration>=2?`<span class="evt-small">${esc(taskInterval(t))}</span>`:'';
-    const noBadge=badge?'':' no-badge';
+    const headline=laneMode==='people'?cardText(t):
+      t.kind==='setup'?'セットアップ':
+      t.kind==='custom'?cardText(t):
+      t.place==='dark'?t.title.replace('暗室（','').replace('）','')+' · '+person:
+      person;
     const draggable=state.editor?'true':'false';
     const top=t.start*ROW+2;
     const height=Math.max(ROW*t.duration-4,ROW-4);
-    return `<button class="event ${esc(kind)}${large}${dimmed}${noBadge}${state.editor?'':' muted'}" type="button" draggable="${draggable}" data-id="${esc(t.id)}" style="top:${top}px;height:${height}px" title="${esc(t.title)} ${esc(taskInterval(t))}">${badge}<span class="evt-label">${esc(headline)}</span>${detail}</button>`;
+    return `<button class="event ${esc(kind)}${large}${dimmed} no-badge${state.editor?'':' muted'}" type="button" draggable="${draggable}" data-id="${esc(t.id)}" style="top:${top}px;height:${height}px" title="${esc(t.title)} ${esc(taskInterval(t))}"><span class="evt-label">${esc(headline)}</span></button>`;
   }
   function renderBoard(){
     const end=Math.max(state.endSlots,Math.min(MAX_SLOTS,Math.ceil(finishSlot()/4)*4));
@@ -1074,7 +1068,7 @@ window.SCHEDULE_CONFIG = {
       localStorage.removeItem(DRAFT_KEY);sessionStorage.removeItem(TOKEN_KEY);
       await reloadRemote();render();toast('閲覧モードに戻りました');return;
     }
-    $('authMessage').textContent='GitHubのFine-grained personal access tokenを入力してください．ブラウザのこのタブ内にのみ保持されます．';
+    $('authMessage').textContent='K0mork/experiment-schedule · Contents: Read and write';
     $('authDialog').showModal();
   }
   async function sendMagicLink(e){
