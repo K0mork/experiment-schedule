@@ -544,7 +544,7 @@
       "id": "komori_C",
       "person": "C",
       "place": "komori704",
-      "start": 21,
+      "start": 2,
       "duration": 1,
       "kind": "session",
       "stage": "komori",
@@ -552,5 +552,5 @@
       "note": ""
     }
   ],
-  "updatedAt": "2026-11-18T00:00:00.000Z"
+  "updatedAt": "2026-11-18T02:01:46.240Z"
 }
